@@ -1,3 +1,4 @@
 logger/
+exp_configs/
 run.sh
 **/__pycache__/
