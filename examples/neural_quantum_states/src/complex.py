@@ -32,4 +32,3 @@ def scalar_mult(x: Union[torch.Tensor, np.ndarray], y: Union[torch.Tensor, np.nd
     re = real(x) * real(y) - imag(x) * imag(y)
     im = real(x) * imag(y) + imag(x) * real(y)
     return torch.stack([re, im], dim=-1)
-    #return torch.stack([re, im], dim=-1) if torch.is_tensor(x) else np.stack([re, im], axis=-1)

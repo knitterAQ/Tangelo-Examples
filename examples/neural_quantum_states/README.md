@@ -1,18 +1,20 @@
 # AUTOREGRESSIVE NEURAL QUANTUM STATES FOR QUANTUM CHEMISTRY
 
-This respository contains code jointly developed between the University of Michigan and SandboxAQ to implement the retentive network (RetNet) neural quantum states ansatz outlined in the paper, "Retentive Nueral Quantum States: Efficient Ansatze for Ab Initio Quantum Chemistry," by Oliver Knitter, Dan Zhao, James Stokes, Martin Ganahl, Stefan Leichenauer, and Shravan Veerapaneni.
+This repository contains code jointly developed between the University of Michigan and SandboxAQ to implement the retentive network (RetNet) neural quantum states ansatz outlined in the paper, "Retentive Neural Quantum States: Efficient Ansatze for Ab Initio Quantum Chemistry," by Oliver Knitter, Dan Zhao, James Stokes, Martin Ganahl, Stefan Leichenauer, and Shravan Veerapaneni.
 
 Preprint available on the arXiv: https://arxiv.org/abs/2411.03900
 
 Corresponding Author: Oliver Knitter, knitter@umich.edu
 
-This repository is based off of the code Tianchen Zhao released (https://github.com/Ericolony/made-qchem) alongside the paper "Scalable neural quantum states architecture for quantum chemistry" (https://arxiv.org/abs/2208.05637). This new code uses neural quantum states (NQS), implemented in PyTorch to calculate electronic ground state energies for second quantized molecular Hamiltonians, which are calculated using PySCF and Tangelo (https://github.com/sandbox-quantum/Tangelo/). The RetNet ansatz implementation was made using the yet-another-retnet repository (https://github.com/fkodom/yet-another-retnet). Other ansatze available are the MADE and Transformer ansatze, which are implemented natively in PyTorch. The Hamiltonian expectation value estimates are calculated following the procedure outlined in Zhao et al.'s paper,  but the modular structure of the code allows for relatively simple plug-and-play implementations of different models and Hamiltonian expectation estimate calculators.
+This repository is based off of the code Tianchen Zhao released (https://github.com/Ericolony/made-qchem) alongside the paper "Scalable neural quantum states architecture for quantum chemistry" (https://arxiv.org/abs/2208.05637). This new code uses neural quantum states (NQS), implemented in PyTorch to calculate electronic ground state energies for second quantized molecular Hamiltonians. Though not exactly a quantum or hybrid algorithm, this workflow makes use of Tangelo (https://github.com/sandbox-quantum/Tangelo/) and PySCF to calculate Jordan--Wigner encodings of the electronic Hamiltonians, along with some classical chemistry benchmark values. These uses of Tangelo are mainly found in the subdirectory src/data/.
+
+The RetNet ansatz implementation was made using the yet-another-retnet repository (https://github.com/fkodom/yet-another-retnet). Other ansatze available are the MADE and Transformer ansatze, which are implemented natively in PyTorch. The Hamiltonian expectation value estimates are calculated following the procedure outlined in Zhao et al.'s paper,  but the modular structure of the code allows for relatively simple plug-and-play implementations of different models and Hamiltonian expectation estimate calculators.
 
 ## Usage
 
 ### 1. Environment Setup
 
-- The environment requirements are avaialable in the nqs-qchem.yml file.
+- The environment requirements are available in the nqs-qchem.yml file.
 
 - Make sure your operating system meets the requirements for PyTorch 2.5.1 and CUDA 11.8.
 

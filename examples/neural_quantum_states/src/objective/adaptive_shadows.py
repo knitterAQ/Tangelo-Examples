@@ -13,8 +13,12 @@ class AdaptiveShadows(Hamiltonian):
     Args:
         hamiltonian_string: Pauli string representation of Hamiltonian
         num_sites: qubit number of system
+        sample_count: Maximum number of Pauli string samples desired
+        total_unique_samples: Total number of unique Pauli string samples desired
+        reset_prob: Probability to resample Pauli strings
+        flip_bs: Number of unique bit flip patterns processed at a time on each GPU
     '''
-    def __init__(self, hamiltonian_string, num_sites, sample_count, total_unique_samples, reset_prob, flip_bs, **kwargs):
+    def __init__(self, hamiltonian_string: str, num_sites: int, sample_count: int, total_unique_samples: int, reset_prob: float, flip_bs: int, **kwargs):
         super(AdaptiveShadows, self).__init__(hamiltonian_string, num_sites)
         # product of identity operators by default, encoded as 0
         self.coefficients = torch.stack((self.coefficients.real, self.coefficients.imag), dim=-1)
@@ -37,6 +41,9 @@ class AdaptiveShadows(Hamiltonian):
         self.counter = 0 # Counter to keep track of which term to replace when updating sample list
         
     def generate_coefficients(self):
+        '''
+        Generates coefficients in Hamiltonian
+        '''
         for i in range(len(self.sample_Z_idx)):
             cover = self.covers[i]
             keys = list(cover.keys())
@@ -46,6 +53,9 @@ class AdaptiveShadows(Hamiltonian):
         self.sample_coeffs = scalar_mult(self.sample_coeffs, part1)
     
     def generate_loss_idxs(self):
+        '''
+        Generate unique bit flip patterns and indices mapping them to each term in the Hamiltonian
+        '''
         flip_idx = self.sample_X_idx + self.sample_Y_idx
         self.select_idx = self.sample_Y_idx + self.sample_Z_idx
         self.unique_flips, self.unique_indices = torch.unique(flip_idx, return_inverse=True, dim=0)
@@ -53,6 +63,9 @@ class AdaptiveShadows(Hamiltonian):
         self.unique_num_terms = self.unique_flips.shape[1]
 
     def update_sample_batch(self):
+        '''
+        Updates existing sample batch with  a new Pauli string sample
+        '''
         new_sample_x, new_sample_y, new_sample_z, new_cover = self.generate_sample_paulis(1)
         if self.sample_X_idx.shape[0] < self.total_unique_samples:
             self.sample_X_idx = torch.cat((self.sample_X_idx, new_sample_x.unsqueeze(0)), dim=0)
@@ -74,7 +87,15 @@ class AdaptiveShadows(Hamiltonian):
         self.generate_loss_idxs()
 
 
-    def generate_sample_paulis(self, num_samples):
+    def generate_sample_paulis(self, num_samples: int) -> [torch.Tensor, torch.Tensor, torch.Tensor, Counter]:
+        '''
+        Generates one (or several) Pauli string samples according to Adaptive Pauli Shadows sampling scheme
+        Args:
+            num_samples: Number of new samples desired
+        Returns:
+            samples: indexes specifying locations of X, Y, and Z matrices in sample strings; separate index arrays for each letter
+            covers: a Counter object showing which Hamiltonian terms are covered by each string according to Adaptive Pauli Shadows
+        '''
         samples = torch.zeros(num_samples, self.input_dim) # 'X' is 1, 'Y' is 2, 'Z' is 3, 'I' is 0
         covers = [Counter(dict(zip(np.arange(self.num_terms), np.ones(self.num_terms)))) for _ in range(num_samples)] # Dictionaries of potential covers for each Pauli sample
         for i in range(num_samples):
@@ -106,6 +127,15 @@ class AdaptiveShadows(Hamiltonian):
         return (samples==1).int(), (samples==2).int(), (samples==3).int(), covers
 
     def compute_local_energy(self, x, model):
+        '''
+        Compute estimated local energy values of Hamiltonian, using Pauli string samples, w.r.t. batch of qubit spin configurations and an ansatz model
+        Args:
+            x: qubit spin configurations
+            model: NQS ansatz
+        Returns:
+            local_energy: local energy values (detached from computational graph)
+            log_psi: logarithms of ansatz statevector entries (attached to computational graph)
+        '''
         # see appendix B of https://arxiv.org/pdf/1909.12852.pdf
         # x [bs, input_dim]
         bs = x.shape[0]
@@ -136,7 +166,10 @@ class AdaptiveShadows(Hamiltonian):
         local_energy = scalar_mult(self.sample_coeffs.unsqueeze(0), scalar_mult(mtx_k, ratio)).sum(1) # [bs, 2]
         return local_energy.detach(), log_psi
 
-    def set_device(self, device):
+    def set_device(self, device: str):
+        '''
+        Sets device of Hamiltonian instance.
+        '''
         self.coefficients = self.coefficients.to(device)
         self.select_idx = self.select_idx.to(device)
         self.unique_flips = self.unique_flips.to(device)
