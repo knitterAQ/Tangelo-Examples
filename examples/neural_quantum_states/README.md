@@ -6,9 +6,11 @@ Preprint available on the arXiv: https://arxiv.org/abs/2411.03900
 
 Corresponding Author: Oliver Knitter, knitter@umich.edu
 
-This repository is based off of the code Tianchen Zhao released (https://github.com/Ericolony/made-qchem) alongside the paper "Scalable neural quantum states architecture for quantum chemistry" (https://arxiv.org/abs/2208.05637). This new code uses neural quantum states (NQS), implemented in PyTorch to calculate electronic ground state energies for second quantized molecular Hamiltonians. Though not exactly a quantum or hybrid algorithm, this workflow makes use of Tangelo (https://github.com/sandbox-quantum/Tangelo/) and PySCF to calculate Jordan--Wigner encodings of the electronic Hamiltonians, along with some classical chemistry benchmark values. These uses of Tangelo are mainly found in the subdirectory src/data/.
+This repository is an elaboration/refactoring of the code Tianchen Zhao released (https://github.com/Ericolony/made-qchem) alongside the paper "Scalable neural quantum states architecture for quantum chemistry" (https://arxiv.org/abs/2208.05637). This new code uses neural quantum states (NQS), implemented in PyTorch to calculate electronic ground state energies for second quantized molecular Hamiltonians. Though not exactly a quantum or hybrid algorithm, this workflow makes use of Tangelo (https://github.com/sandbox-quantum/Tangelo/) and PySCF to calculate Jordan--Wigner encodings of the electronic Hamiltonians, along with some classical chemistry benchmark values. These uses of Tangelo are mainly found in the subdirectory src/data/.
 
 The RetNet ansatz implementation was made using the yet-another-retnet repository (https://github.com/fkodom/yet-another-retnet). Other ansatze available are the MADE and Transformer ansatze, which are implemented natively in PyTorch. The Hamiltonian expectation value estimates are calculated following the procedure outlined in Zhao et al.'s paper,  but the modular structure of the code allows for relatively simple plug-and-play implementations of different models and Hamiltonian expectation estimate calculators.
+
+This code will not be actively maintained and is not intended to be the subject of further development by its authors.
 
 ## Usage
 
