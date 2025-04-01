@@ -15,7 +15,7 @@ class MADE(Base):
         **kwargs: nonspecific kwargs
     '''
     def __init__(self, num_sites: int, num_spin_up: int, num_spin_down: int, made_width: int=64, made_depth: int=2, temperature: float=1.0, device: str=None, **kwargs):
-        super(MADE, self).__init__(num_sites, num_spin_up, num_spin_down, device)
+        super(MADE, self).__init__('MADE', num_sites, num_spin_up, num_spin_down, device)
         self.temperature = temperature
         # construct model
         self.net = []

@@ -20,7 +20,7 @@ class NNQSRetNet(Base):
             temperature: RetNet softmax temperature parameter
             device: device on which the model is stored
         '''
-        super(NNQSRetNet, self).__init__(num_sites, num_spin_up, num_spin_down, device)
+        super(NNQSRetNet, self).__init__('RetNet', num_sites, num_spin_up, num_spin_down, device)
 
         # construct model
         self.num_in, self.num_out = num_sites, num_sites*2
