@@ -43,14 +43,7 @@ jobs:
 
     - name: Install Microsoft qsharp/qdk
       run: |
-        wget https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
-        sudo dpkg -i packages-microsoft-prod.deb
-        rm packages-microsoft-prod.deb
-        sudo apt-get update; sudo apt-get install -y apt-transport-https && sudo apt-get update
-        sudo apt-get install -y dotnet-sdk-5.0
-        dotnet tool install -g Microsoft.Quantum.IQSharp
-        $(which dotnet-iqsharp) install --user
-        pip install qsharp
+        pip install qsharp azure-quantum
       if: always()
 
     - name: tangelo install
@@ -72,11 +65,11 @@ jobs:
       if: always()
 
     - name: Upload pytest test results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: notebook-test-results
         path: examples/junit/notebook-test-results.xml
 
     - name: Download all workflow run artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       if: always()
