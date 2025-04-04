@@ -11,7 +11,7 @@ from .hamiltonian import Hamiltonian
 class Surrogate(Hamiltonian):
     def __init__(self, hamiltonian_string: str, num_sites: int, flip_bs: int, **kwargs):
         '''
-        An implemenation of the surrogate Hamiltonian described in https://dl.acm.org/doi/10.1145/3581784.3607061
+        An implementation of the surrogate Hamiltonian described in https://dl.acm.org/doi/10.1145/3581784.3607061
         To minimize the number of forward passes through the ansatz needed for each gradient update step, local energies are approximated using only qubit spin configurations that are directly sampled from the ansatz distribution. Hamiltonian is stored in an identical manner to the Automatic Hamiltonian class, but two steps are required to compute local energy values (self.obtain_log_entries, self.compute_local_energy) that must occur separately at each step of the training loop.
         Args:
             hamiltonian_string: Pauli string representation of Hamiltonian
@@ -26,17 +26,21 @@ class Surrogate(Hamiltonian):
         pauli_x_idx = (self.operators==1).int() # [num_terms, input_dim]
         pauli_y_idx = (self.operators==2).int() # [num_terms, input_dim]
         pauli_z_idx = (self.operators==3).int() # [num_terms, input_dim]
-        del self.operators
+
+        del self.operators # intermediate Hamiltonian data is explicitly deleted to preserve memory
         # track the exponential of -i
         self.num_pauli_y = pauli_y_idx.sum(-1) # [num_terms]
         part1 = (-1j)**self.num_pauli_y.detach()
         part1 = torch.stack((part1.real, part1.imag), dim=-1).float()
         self.coefficients = scalar_mult(self.coefficients, part1)
         del part1
+        
+        # Each Pauli string in Hamiltonian corresponds with a bit flip sequence and a phase flip sequence, which are stored separately
         # the unique element has flipped value if the corresponding pauli is x or y.
         flip_idx = pauli_x_idx + pauli_y_idx # [num_terms, input_dim]
         # self.flip_idx = flip_idx
         del pauli_x_idx
+        
         # only the entry value with y or z pauli is multiplied
         self.select_idx = pauli_y_idx + pauli_z_idx
         del pauli_y_idx
@@ -189,6 +193,8 @@ class Surrogate(Hamiltonian):
     def set_device(self, device: str):
         '''
         Sets device of all relevant object tensors to 'device'
+        Args:
+            device: name of Cuda device to which Hamiltonian is being sent
         '''
         self.coefficients = self.coefficients.to(device)
         self.num_pauli_y = self.num_pauli_y.to(device)

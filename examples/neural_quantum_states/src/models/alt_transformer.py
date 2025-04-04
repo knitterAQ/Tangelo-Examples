@@ -9,6 +9,11 @@ class AltTransformer(Base):
     def __init__(self, num_sites: int, num_spin_up: int, num_spin_down: int, embedding_dim: int=16, nhead: int=2, dim_feedforward: int=64, num_layers: int=1, temperature: float=1.0, device: str=None, **kwargs):
         '''
         A Transformer-based autoregressive NQS Ansatz using the phase strategy from Bennewitz et al, where a single linear layer operators on the concated list of transformer hidden states in lieu of a seperate phase network.
+        Parent class args:
+            num_sites: number of qubits in the ansatz system
+            num_spin_up: total occupancy number of spin-up spin-orbitals
+            num_spin_down: total occupancy number of spin-down spin-orbitals
+            device: Device (CPU or Cuda) to store model
         Child class specific args:
             embedding_dim: dimension of transformer hidden states
             nhead: number of attention heads
@@ -22,8 +27,10 @@ class AltTransformer(Base):
         # construct model
         self.num_in, self.num_out = num_sites, num_sites*2
         self.temperature = temperature
+        # Sample function samples spatial orbitals in reverse order, but spin-up orbitals are always sampled first. self.input_order calculates this order for sampling.
         self.input_order = np.stack([np.arange(self.num_sites-2,-1,-2), np.arange(self.num_sites-1,-1,-2)],1).reshape(-1) # [4,5,2,3,0,1]
         self.input_order = torch.Tensor(self.input_order).int().to(self.device)
+        # Calculate spatial orbital sampling order
         self.shell_order = torch.arange(self.num_sites//2-1, -1, -1) # [2,1,0]
         
         transformer_layer = nn.TransformerEncoderLayer(embedding_dim, nhead, dim_feedforward=dim_feedforward, dropout=0.0, batch_first=True)
@@ -44,6 +51,11 @@ class AltTransformer(Base):
                     self.mask[i][j] = float('-inf') 
         
     def _init_weights(self, module: nn.Module):
+        '''
+        Performs weight initialization for each module in ansatz, dependent on module type
+        Args:
+            module: module to be initialized
+        '''
         if isinstance(module, nn.Linear):
             torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
             if module.bias is not None:
@@ -75,18 +87,22 @@ class AltTransformer(Base):
         if self.mask.device != self.device:
             self.mask = self.mask.to(self.device)
         output = self.transformer(input[:,:(len(self.shell_order) - sample_shell + 1)], mask=self.mask[:(len(self.shell_order) - sample_shell + 1),:(len(self.shell_order) - sample_shell + 1)], is_causal=True)
+        
         if not self.sampling:
             phase_input = output.reshape(output.shape[0], -1)
         output = self.fc(output)
+        
         if output.shape[1] < len(self.shell_order):
             new_output = torch.zeros(output.shape[0], len(self.shell_order), output.shape[2]).to(self.device)
             new_output[:,:output.shape[1],:] = output
             output = new_output[:, self.shell_order]
         else:
             output = output[:, self.shell_order]
+        
         if (self.num_spin_up + self.num_spin_down) >= 0:
             logits_cls = self.apply_constraint(x, output)
         logits_cls /= self.temperature
+        
         if self.sampling:
             prob_cond = self.softmax(logits_cls)
             return prob_cond
@@ -100,7 +116,15 @@ class AltTransformer(Base):
             log_psi = torch.stack((log_psi_real, log_psi_imag), dim=-1)
             return log_psi
 
-    def apply_constraint(self, inp, log_psi_cond):
+    def apply_constraint(self, inp: torch.Tensor, log_psi_cond: torch.Tensor) -> torch.Tensor:
+        '''
+        Applies constraints that enforce particle number and spin on ansatz network
+        Args:
+            inp: input spin configurations
+            log_psi_cond: unconstrained ansatz outputs
+        Returns:
+            log_psi_cond: ansatz outputs with constraint applied
+        '''
         # convert [|-1,-1>, |1,-1>, |-1,1>, |1,1>] to [0, 1, 2, 3]
         device = inp.device
         N = inp.shape[-1] // 2
@@ -132,7 +156,16 @@ class AltTransformer(Base):
         return log_psi_cond
 
     @torch.no_grad()
-    def sample(self, bs, num_samples):
+    def sample(self, bs: int, num_samples: int) -> [torch.Tensor, torch.Tensor]:
+        '''
+        Generates a set of samples from the ansatz state vector distribution
+        Inputs:
+            bs: total number of unique samples desired
+            num_samples: total number of non-unique samples desired
+        Returns:
+            uniq_samples: unique spin sample set
+            uniq_counts: tensor of count values (summing to num_samples) corresponding with uniq_samples
+        '''
         self.eval()
         self.sampling = True
         sample_multinomial = True

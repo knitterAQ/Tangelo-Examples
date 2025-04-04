@@ -8,6 +8,11 @@ from .base import Base
 class MADE(Base):
     '''
     Class implements MADE-based NQS ansatz
+    Parent class args:
+        num_sites: number of qubits in the ansatz system
+        num_spin_up: total occupancy number of spin-up spin-orbitals
+        num_spin_down: total occupancy number of spin-down spin-orbitals
+        device: Device (CPU or Cuda) to store model
     Child class specific args:
         made_width: width of modulus and phase network hidden layers
         made_depth: number of hidden layers in modulus and phase networks
